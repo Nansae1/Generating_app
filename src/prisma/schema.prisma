@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+model User {
+  id        Int           @id @default(autoincrement())
+  email     String        @unique
+  name      String?
+  createdAt DateTime      @default(now())
+
+  articles  Article[]
+  attempts  QuizAttempt[]
+}
+
+model Article {
+  id        Int        @id @default(autoincrement())
+  title     String
+  content   String
+  summary   String?    
+  createdAt DateTime   @default(now())
+
+  authorId  Int?
+  author    User?      @relation(fields: [authorId], references: [id])
+
+  questions Question[]
+  attempts  QuizAttempt[]
+}
+
+model Question {
+  id        Int      @id @default(autoincrement())
+  text      String
+
+  articleId Int
+  article   Article  @relation(fields: [articleId], references: [id])
+
+  choices   Choice[]
+  answers   UserAnswer[]
+}
+
+model Choice {
+  id         Int      @id @default(autoincrement())
+  text       String
+  isCorrect  Boolean
+
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id])
+
+  answers    UserAnswer[]
+}
+
+model QuizAttempt {
+  id        Int       @id @default(autoincrement())
+  articleId Int
+  userId    Int?
+
+  score     Int?
+  startedAt DateTime  @default(now())
+  finishedAt DateTime?
+
+  article   Article   @relation(fields: [articleId], references: [id])
+  user      User?     @relation(fields: [userId], references: [id])
+
+  answers   UserAnswer[]
+}
+
+model UserAnswer {
+  id         Int         @id @default(autoincrement())
+
+  attemptId  Int
+  questionId Int
+  choiceId   Int
+
+  attempt    QuizAttempt @relation(fields: [attemptId], references: [id])
+  question   Question    @relation(fields: [questionId], references: [id])
+  choice     Choice      @relation(fields: [choiceId], references: [id])
+
+  createdAt  DateTime    @default(now())
+}
